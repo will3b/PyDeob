@@ -51,6 +51,14 @@ class AnalysisReport:
             "risk_score": self.risk_score,
             "risk_explanation": self.risk_explanation,
             "layers_count": len(self.layers),
+            "layers": [
+                {
+                    "index": l.index,
+                    "decoder": l.decoder_name or "original",
+                    "output_path": l.output_path
+                }
+                for l in self.layers
+            ],
             "indicators": [
                 {"name": i.name, "severity": i.severity.value, "description": i.description}
                 for i in self.indicators
