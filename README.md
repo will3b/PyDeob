@@ -62,6 +62,37 @@ pydeob analyze malware.py --report --extract-iocs
 | `--output-dir` | Set the base directory for results (Default: `output/`). A subfolder named after the script is created inside. |
 | `--verbose` | Shows detailed logs of the peeling process, intercepted calls, and plugin actions. |
 
+### Deep Obfuscation Guide
+
+PyDeob includes a powerful offensive engine designed to test the limits of your deobfuscation capabilities.
+
+#### Basic Usage
+```bash
+pydeob obfuscate malware.py --iterations 10
+```
+
+#### Advanced Options
+| Option | Description |
+| :--- | :--- |
+| `file` | The source Python script to protect. |
+| `--iterations` | Number of recursive protection layers (supports 1-100+). |
+| `--methods` | Comma-separated list of specific engines to use (e.g., `--methods xor_exec,marshal_exec`). |
+| `--output` | Custom name for the protected file (Default: `obfuscated_<original>.py`). |
+| `--verbose` | Detailed logs showing which protection module was applied at each layer. |
+
+#### Available Protection Modules
+The engine randomly selects from these high-intensity modules at every iteration:
+
+1. **`marshal_exec`**: Compiles source code to **Python Bytecode**. This hides the source logic entirely behind binary blobs.
+2. **`lambda_zlib_b64`**: A multi-stage wrapper that uses dynamic lambdas and reversed strings to bypass static analysis.
+3. **`xor_exec`**: Encrypts the code with a **dynamic XOR key** generated randomly for every layer.
+4. **`zlib_exec` / `gzip_exec`**: High-ratio compression modules that shrink the payload and hide plain-text strings.
+5. **`junk_code`**: Injects randomized "dead code" (junk variables, impossible if-statements) to increase analysis noise.
+6. **`base64_exec`**: Standard encoding layer to facilitate transport and nesting.
+7. **`reverse_exec`**: Inverts the string order to break simple pattern-matching decoders.
+
+---
+
 ## Output Structure
 
 Results are organized into a script-specific folder:

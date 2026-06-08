@@ -30,6 +30,14 @@ def main():
     analyze_parser.add_argument("--verbose", action="store_true", help="Display detailed diagnostic logs, including plugin discovery, iteration steps, and interception events.")
     analyze_parser.add_argument("--output-dir", default="output", help="The base directory where analysis results will be stored. A script-specific subfolder will be created inside. (Default: 'output')")
 
+    # Obfuscate Command
+    obf_parser = subparsers.add_parser("obfuscate", help="Obfuscate a Python script for testing purposes")
+    obf_parser.add_argument("file", help="The source Python script to obfuscate")
+    obf_parser.add_argument("--iterations", type=int, default=5, help="Number of obfuscation layers to apply. (Default: 5, supports 100+)")
+    obf_parser.add_argument("--methods", help="Comma-separated list of obfuscation methods to use (e.g., 'xor_exec,marshal_exec').")
+    obf_parser.add_argument("--output", help="Path to save the obfuscated script.")
+    obf_parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
+
     args = parser.parse_args()
 
     if args.command == "analyze":
@@ -72,8 +80,39 @@ def main():
         except Exception as e:
             logging.exception("Analysis failed")
             sys.exit(1)
-    else:
-        parser.print_help()
+
+    elif args.command == "obfuscate":
+        setup_logging(args.verbose)
+        target_path = Path(args.file)
+        if not target_path.exists():
+            console.print(f"[red]Error:[/red] File {args.file} not found.")
+            sys.exit(1)
+
+        from pydeob.obfuscators.engine import ObfuscationEngine
+
+        methods = None
+        if args.methods:
+            methods = [m.strip() for m in args.methods.split(",")]
+
+        try:
+            obf_engine = ObfuscationEngine(allowed_methods=methods)
+            source = target_path.read_text()
+            console.print(f"[bold magenta]Obfuscating {target_path.name} with {args.iterations} layers...[/bold magenta]")
+            if methods:
+                console.print(f"Using methods: [cyan]{', '.join(methods)}[/cyan]")
+
+            result = obf_engine.obfuscate(source, args.iterations)
+
+            output_path = Path(args.output) if args.output else target_path.with_name(f"obfuscated_{target_path.name}")
+            output_path.write_text(result)
+
+            console.print(f"[bold green]Obfuscation complete![/bold green]")
+            console.print(f"File saved to: [cyan]{output_path}[/cyan]")
+
+        except Exception as e:
+            logging.exception("Obfuscation failed")
+            sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
