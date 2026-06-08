@@ -1,0 +1,21 @@
+[project]
+name = "pydeob"
+version = "0.1.0"
+description = "Extensible Python deobfuscation and malware-analysis framework"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "rich",
+    "pyyaml",
+]
+
+[project.scripts]
+pydeob = "pydeob.cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
