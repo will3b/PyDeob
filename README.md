@@ -113,6 +113,25 @@ The engine randomly selects from these high-intensity modules at every iteration
 
 ---
 
+### External Tool Setup (PyArmor)
+
+To use the `pyarmor_exec` obfuscation method, you must have PyArmor installed on your system.
+
+#### Installation
+```bash
+pip install pyarmor
+```
+
+#### OS-Specific Notes
+- **Linux (Kali/Ubuntu/etc.)**: Ensure `pyarmor` is in your `$PATH`. If using a virtual environment, install it within the same environment.
+- **Windows**: Use `pip install pyarmor`. Ensure the Python Scripts folder (e.g., `C:\Python312\Scripts`) is in your System Environment Variables.
+- **macOS**: Use `pip install pyarmor`. On Apple Silicon (M1/M2/M3), ensure you are using a native ARM64 Python installation for best compatibility.
+
+#### Troubleshooting
+If PyDeob reports that PyArmor failed to generate output, verify the installation by running `pyarmor --version` in your terminal. PyDeob is designed to work with **PyArmor 8.x** and above (using the `gen` command).
+
+---
+
 ## Output Structure
 
 Results are organized into a script-specific folder:
