@@ -7,8 +7,26 @@
 - **Iterative Peeling Engine**: Automatically detects and applies transformations, iterating until the final payload is reached.
 - **Hybrid Plugin Pipeline**: Combines **AST-based** pattern matching (precise) with **String-based** transformations (flexible).
 - **Safe Dynamic Sandbox**: Intercepts `exec`, `eval`, and `compile` calls in a persistent restricted namespace, allowing complex multi-stage deobfuscators to work without ever executing malicious payloads on your host.
-- **Behavioral Scoring**: Identifies usage of high-risk modules like `subprocess`, `ctypes`, `socket`, and `winreg`, assigning a risk score from 0 to 100.
-- **IOC Extraction**: Automatically finds URLs, IPs, Domains, Email addresses, and Cryptocurrency wallets across all recovered code layers.
+- **Advanced Protection Detection**: Specific signatures to identify high-level protections like **PyArmor** and **Nuitka**.
+
+### Behavioral Scoring & Detection
+
+PyDeob identifies usage of high-risk modules and advanced protection tools:
+
+| Category | Protection / Module | Severity | Risk Weight |
+| :--- | :--- | :--- | :--- |
+| **Advanced** | **Nuitka** | **CRITICAL** | **+60** |
+| **Advanced** | **PyArmor** | **CRITICAL** | **+50** |
+| **System** | `powershell`, `os.system` | **CRITICAL/HIGH**| **+20/12** |
+| **Execution** | `subprocess`, `ctypes` | **HIGH** | **+10/15** |
+| **Dynamic** | `exec`, `eval`, `compile` | **MEDIUM** | **+2** |
+| **Network** | `socket`, `requests`, `urllib` | **MEDIUM/LOW** | **+5/2** |
+
+#### Why Nuitka and PyArmor are Critical
+- **Nuitka**: This tool translates Python scripts into C++ and compiles them into a native machine-code binary. Deobfuscating Nuitka-protected code is extremely complex as it removes the original Python bytecode entirely.
+- **PyArmor**: A professional tool that encrypts Python scripts and protects them with a custom runtime. It uses dynamic code generation and custom interpreters to prevent reverse engineering.
+
+---
 
 ## System Requirements
 
@@ -24,7 +42,7 @@
 PyDeob requires Python 3.12+.
 
 ```bash
-git clone https://github.com/willb3/PyDeob.git
+git clone https://github.com/will3b/PyDeob.git
 cd PyDeob
 python3 -m venv venv
 source venv/bin/activate
@@ -83,13 +101,15 @@ pydeob obfuscate malware.py --iterations 10
 #### Available Protection Modules
 The engine randomly selects from these high-intensity modules at every iteration:
 
-1. **`marshal_exec`**: Compiles source code to **Python Bytecode**. This hides the source logic entirely behind binary blobs.
-2. **`lambda_zlib_b64`**: A multi-stage wrapper that uses dynamic lambdas and reversed strings to bypass static analysis.
-3. **`xor_exec`**: Encrypts the code with a **dynamic XOR key** generated randomly for every layer.
-4. **`zlib_exec` / `gzip_exec`**: High-ratio compression modules that shrink the payload and hide plain-text strings.
-5. **`junk_code`**: Injects randomized "dead code" (junk variables, impossible if-statements) to increase analysis noise.
-6. **`base64_exec`**: Standard encoding layer to facilitate transport and nesting.
-7. **`reverse_exec`**: Inverts the string order to break simple pattern-matching decoders.
+1. **`pyarmor_exec`**: Calls external **PyArmor** (if installed) to encrypt the script.
+2. **`nuitka_exec`**: Simulates **Nuitka** markers to test detection signatures.
+3. **`marshal_exec`**: Compiles source code to **Python Bytecode**.
+4. **`lambda_zlib_b64`**: Multi-stage dynamic lambda protection.
+5. **`xor_exec`**: Dynamic XOR encryption.
+6. **`zlib_exec` / `gzip_exec`**: High-ratio binary compression.
+7. **`junk_code`**: Randomized "dead code" and noise injection.
+8. **`base64_exec`**: Standard encoding layer.
+9. **`reverse_exec`**: String order inversion.
 
 ---
 

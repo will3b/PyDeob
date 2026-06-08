@@ -6,7 +6,8 @@ from pydeob.obfuscators.base import (
     Base64Obfuscator, ZlibObfuscator, 
     ReverseObfuscator, XorObfuscator, 
     LambdaObfuscator, GzipObfuscator,
-    MarshalObfuscator, JunkCodeObfuscator
+    MarshalObfuscator, JunkCodeObfuscator,
+    PyArmorObfuscator, NuitkaObfuscator
 )
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,9 @@ class ObfuscationEngine:
             LambdaObfuscator(),
             GzipObfuscator(),
             MarshalObfuscator(),
-            JunkCodeObfuscator()
+            JunkCodeObfuscator(),
+            PyArmorObfuscator(),
+            NuitkaObfuscator()
         ]
         
         if allowed_methods:

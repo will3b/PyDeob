@@ -2,6 +2,12 @@ import base64
 import zlib
 import random
 import string
+import gzip
+import marshal
+import subprocess
+import tempfile
+import shutil
+from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -39,10 +45,8 @@ class ReverseObfuscator(BaseObfuscator):
         return "reverse_exec"
 
     def obfuscate(self, source: str) -> str:
-        # We need a payload that is executable when reversed
-        # Usually we reverse a string then reverse it back in code
         reversed_source = source[::-1]
-        return f"exec('{reversed_source.replace("'", "\\'")}'[::-1])"
+        return f"exec({reversed_source!r}[::-1])"
 
 class XorObfuscator(BaseObfuscator):
     @property
@@ -60,18 +64,10 @@ class LambdaObfuscator(BaseObfuscator):
         return "lambda_zlib_b64"
 
     def obfuscate(self, source: str) -> str:
-        # Mirroring the UltimateProxyHunter style
-        # _ = lambda __ : __import__('zlib').decompress(__import__('base64').b64decode(__[::-1]));
-        # exec((_)(payload))
-        import zlib
-        import base64
         compressed = zlib.compress(source.encode())
         encoded = base64.b64encode(compressed).decode()[::-1]
         var_name = "".join(random.choices(string.ascii_letters, k=1))
         return f"{var_name} = lambda __ : __import__('zlib').decompress(__import__('base64').b64decode(__[::-1]));\nexec(({var_name})('{encoded}'))"
-
-import gzip
-import marshal
 
 class GzipObfuscator(BaseObfuscator):
     @property
@@ -106,3 +102,33 @@ class JunkCodeObfuscator(BaseObfuscator):
         ]
         random.shuffle(junk_lines)
         return "\n".join(junk_lines) + "\n" + source
+
+class PyArmorObfuscator(BaseObfuscator):
+    @property
+    def name(self) -> str:
+        return "pyarmor_exec"
+
+    def obfuscate(self, source: str) -> str:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            script_file = tmp_path / "target.py"
+            script_file.write_text(source)
+            try:
+                subprocess.run(["pyarmor", "gen", str(script_file)], 
+                               cwd=tmpdir, check=True, capture_output=True)
+                output_file = tmp_path / "dist" / "target.py"
+                if output_file.exists():
+                    return output_file.read_text()
+                else:
+                    return f"# [PyDeob] PyArmor failed to generate output. Ensure 'pyarmor' is installed.\n{source}"
+            except Exception as e:
+                return f"# [PyDeob] PyArmor error: {e}\n{source}"
+
+class NuitkaObfuscator(BaseObfuscator):
+    @property
+    def name(self) -> str:
+        return "nuitka_exec"
+
+    def obfuscate(self, source: str) -> str:
+        # Simulate Nuitka internal markers to test detection
+        return f"# [PyDeob] Nuitka simulation\nimport sys\nif not hasattr(sys, '__nuitka_binary_dir'): pass\n{source}"
