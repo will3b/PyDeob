@@ -1,6 +1,6 @@
 # PyDeob
 
-**PyDeob** is a production-quality, extensible Python deobfuscation and malware-analysis framework. It is designed to safely "peel" through multiple layers of obfuscation, recovering the original source code while identifying behavioral indicators and extracting Indicators of Compromise (IOCs).
+**PyDeob** is an advanced, extensible Python deobfuscation and malware-analysis framework. It provides a complete pipeline for security researchers to both generate complex obfuscation and safely "peel" through multiple layers of protected code, recovering the original source while identifying behavioral indicators and extracting Indicators of Compromise (IOCs).
 
 ## Key Features
 
