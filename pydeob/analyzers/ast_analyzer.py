@@ -52,6 +52,8 @@ class ASTAnalyzer(ast.NodeVisitor):
         "psutil": (Severity.LOW, 3, "Process management/enumeration"),
         "os.system": (Severity.HIGH, 12, "Direct shell command execution"),
         "powershell": (Severity.CRITICAL, 20, "PowerShell execution"),
+        "pyarmor_runtime": (Severity.CRITICAL, 50, "PyArmor protection detected (Advanced Obfuscation/Encryption)"),
+        "nuitka": (Severity.CRITICAL, 60, "Nuitka compilation detected (Native Binary/C Translation)"),
     }
 
     def visit_Import(self, node: ast.Import):
@@ -67,15 +69,24 @@ class ASTAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def _check_behavioral(self, name: str):
+        # Specific check for PyArmor (often looks like pyarmor_runtime_xxxxxx)
+        if "pyarmor_runtime" in name:
+            sev, weight, desc = self.BEHAVIORAL_INDICATORS["pyarmor_runtime"]
+            self._add_indicator("PyArmor Protection", desc, sev, weight)
+            return
+
         if name in self.BEHAVIORAL_INDICATORS:
             sev, weight, desc = self.BEHAVIORAL_INDICATORS[name]
-            self.report.indicators.append(Indicator(
-                name=f"Behavioral: {name}",
-                description=desc,
-                severity=sev
-            ))
-            self.report.risk_score += weight
-            self.report.risk_explanation.append(f"Import of {name} detected ({desc})")
+            self._add_indicator(f"Behavioral: {name}", desc, sev, weight)
+
+    def _add_indicator(self, name: str, desc: str, sev: Severity, weight: int):
+        self.report.indicators.append(Indicator(
+            name=name,
+            description=desc,
+            severity=sev
+        ))
+        self.report.risk_score += weight
+        self.report.risk_explanation.append(f"{name} detected: {desc}")
 
     def visit_Constant(self, node: ast.Constant):
         if isinstance(node.value, str):
@@ -90,21 +101,19 @@ class ASTAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call):
-        # Detect exec/eval
         func_name = ""
         if isinstance(node.func, ast.Name):
             func_name = node.func.id
         elif isinstance(node.func, ast.Attribute):
             func_name = node.func.attr
+        
+        # Detect Nuitka specific internal calls if present
+        if "__nuitka_binary_dir" in func_name or "nuitka" in func_name.lower():
+            sev, weight, desc = self.BEHAVIORAL_INDICATORS["nuitka"]
+            self._add_indicator("Nuitka Compilation", desc, sev, weight)
 
+        # Detect exec/eval
         if func_name in ("exec", "eval", "compile"):
-            self.report.indicators.append(Indicator(
-                name=f"Dynamic Execution: {func_name}",
-                description=f"Detected use of {func_name}()",
-                severity=Severity.MEDIUM,
-                details={"line": node.lineno}
-            ))
-            self.report.risk_score += 2
-            self.report.risk_explanation.append(f"Use of {func_name}() detected at line {node.lineno}")
+            self._add_indicator(f"Dynamic Execution: {func_name}", f"Detected use of {func_name}()", Severity.MEDIUM, 2)
 
         self.generic_visit(node)
