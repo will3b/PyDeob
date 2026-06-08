@@ -98,18 +98,21 @@ pydeob obfuscate malware.py --iterations 10
 | `--output` | Custom name for the protected file (Default: `obfuscated_<original>.py`). |
 | `--verbose` | Detailed logs showing which protection module was applied at each layer. |
 
-#### Available Protection Modules
-The engine randomly selects from these high-intensity modules at every iteration:
+#### Detailed Protection Modules
 
-1. **`pyarmor_exec`**: Calls external **PyArmor** (if installed) to encrypt the script.
-2. **`nuitka_exec`**: Simulates **Nuitka** markers to test detection signatures.
-3. **`marshal_exec`**: Compiles source code to **Python Bytecode**.
-4. **`lambda_zlib_b64`**: Multi-stage dynamic lambda protection.
-5. **`xor_exec`**: Dynamic XOR encryption.
-6. **`zlib_exec` / `gzip_exec`**: High-ratio binary compression.
-7. **`junk_code`**: Randomized "dead code" and noise injection.
-8. **`base64_exec`**: Standard encoding layer.
-9. **`reverse_exec`**: String order inversion.
+Below is a detailed explanation of each obfuscation engine available. By default, the obfuscator randomly chains these together to create complex, multi-layered protections.
+
+| Module | What it does | Example Output Snippet |
+| :--- | :--- | :--- |
+| **`marshal_exec`** | Compiles the Python code into unreadable, binary Python Bytecode. Highly effective at hiding plain text. | `import marshal; exec(marshal.loads(b'\xe3\x00\x00...'))` |
+| **`lambda_zlib_b64`** | A complex 3-stage wrapper frequently seen in wild malware (like UltimateProxyHunter). It compresses, base64 encodes, and reverses the payload, then unpacks it dynamically via an anonymous lambda function. | `W = lambda __ : __import__('zlib').decompress(__import__('base64').b64decode(__[::-1])); exec((W)('==wM...'))` |
+| **`xor_exec`** | Encrypts the code dynamically using a randomly generated integer XOR key. | `exec(''.join(chr(ord(c) ^ 142) for c in '\xcd\xef...'))` |
+| **`zlib_exec`** <br> **`gzip_exec`** | Compresses the payload into a byte string. Used to shrink file size and conceal static strings from basic analysis. | `import zlib; exec(zlib.decompress(b'x\x9c...'))` |
+| **`junk_code`** | Injects useless, randomized variables and impossible logic blocks into the code. This "noise" breaks signature-based detection and confuses manual analysts. | `kLmN = 582; if 1 == 3: pQrS = True; ...` |
+| **`base64_exec`** | A standard Base64 encoding wrapper. Often used as a transport layer between more complex obfuscations. | `import base64; exec(base64.b64decode('cHJp...'))` |
+| **`reverse_exec`** | Inverts the entire string backwards to break simple Regex-based static decoders. | `exec(')tni...'(::-1])` |
+| **`pyarmor_exec`** | *(External)* Calls the PyArmor CLI to heavily encrypt the script and bind it to a custom runtime. | `from pyarmor_runtime_000000 import __pyarmor__; __pyarmor__(...)` |
+| **`nuitka_exec`** | *(Simulation)* Injects Nuitka-specific markers (since true Nuitka output is a compiled C binary). Used purely to test if PyDeob can successfully detect and flag Nuitka usage as CRITICAL. | `if not hasattr(sys, '__nuitka_binary_dir'): ...` |
 
 ---
 
