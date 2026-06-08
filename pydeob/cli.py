@@ -35,7 +35,8 @@ def main():
     obf_parser.add_argument("file", help="The source Python script to obfuscate")
     obf_parser.add_argument("--iterations", type=int, default=5, help="Number of obfuscation layers to apply. (Default: 5, supports 100+)")
     obf_parser.add_argument("--methods", help="Comma-separated list of obfuscation methods to use (e.g., 'xor_exec,marshal_exec').")
-    obf_parser.add_argument("--output", help="Path to save the obfuscated script.")
+    obf_parser.add_argument("--output", help="Custom name for the obfuscated script file.")
+    obf_parser.add_argument("--output-dir", default="output", help="The base directory where results will be stored. A script-specific subfolder will be created inside. (Default: 'output')")
     obf_parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
 
     args = parser.parse_args()
@@ -88,6 +89,11 @@ def main():
             console.print(f"[red]Error:[/red] File {args.file} not found.")
             sys.exit(1)
 
+        # Create output directory
+        base_out = Path(args.output_dir) if hasattr(args, "output_dir") else Path("output")
+        subfolder = base_out / f"{target_path.stem}_protected"
+        subfolder.mkdir(parents=True, exist_ok=True)
+
         from pydeob.obfuscators.engine import ObfuscationEngine
 
         methods = None
@@ -103,7 +109,8 @@ def main():
 
             result = obf_engine.obfuscate(source, args.iterations)
 
-            output_path = Path(args.output) if args.output else target_path.with_name(f"obfuscated_{target_path.name}")
+            filename = args.output if args.output else f"protected_{target_path.name}"
+            output_path = subfolder / filename
             output_path.write_text(result)
 
             console.print(f"[bold green]Obfuscation complete![/bold green]")
