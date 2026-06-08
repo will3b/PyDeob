@@ -12,6 +12,7 @@ env/
 output/
 *.egg-info/
 .pytest_cache/
+GEMINI.md
 
 # OS files
 .DS_Store
